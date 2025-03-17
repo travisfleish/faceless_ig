@@ -2,4 +2,4 @@ config.py
 google_sheets_credentials.json
 __pycache__/
 .venv/
-.idea/
+.idea/config.py
