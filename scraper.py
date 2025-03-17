@@ -126,7 +126,12 @@ def scrape_listings():
                 for idx, img_url in enumerate(image_urls, start=1)
             ]
 
-        instagram_account = f"Most Expensive Homes in {address.split()[-1]}"
+        # Extract county name from the listing URL
+        county_match = re.search(r"homes-for-sale/([a-zA-Z-]+)-md", listing_url)  # Adjust state code as needed
+        county_name = county_match.group(1).replace("-", " ").title() if county_match else "Unknown County"
+
+        # Set Instagram account name as "Most Expensive Homes in {County Name}"
+        instagram_account = f"Most Expensive Homes in {county_name}"
 
         listings_data.append({
             "listing_url": listing_url,

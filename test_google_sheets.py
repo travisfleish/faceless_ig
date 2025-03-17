@@ -15,7 +15,7 @@ def test_google_sheets():
     print(f"✅ Connected to Google Sheets. Existing rows: {len(existing_data)}")
 
     # ✅ Test writing
-    sheet.append_row(["Test URL", "Test Price", "Test Address", "Beds", "Baths", "Sqft", "Description", "Caption"])
+    sheet.append_row(["NEWTest URL", "Test Price", "Test Address", "Beds", "Baths", "Sqft", "Description", "Caption"])
     print("✅ Successfully added a test row!")
 
 
