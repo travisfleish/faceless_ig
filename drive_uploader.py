@@ -9,6 +9,7 @@ from googleapiclient.http import MediaIoBaseUpload
 from google.oauth2.service_account import Credentials
 from googleapiclient.errors import HttpError
 from config import SERVICE_ACCOUNT_FILE, GOOGLE_DRIVE_FOLDER_ID
+import os
 
 # ✅ Google Drive Authentication
 def authenticate_google_drive():

@@ -36,14 +36,10 @@ Follow us for more amazing luxury homes in Bethesda that'll make your jaw drop."
     # Generate a custom CTA based on the location
     custom_cta = generate_custom_cta(location)
 
-    # Create the header template with conditionally added agent attribution
-    header_template = f"""📍 {{address}}
-💰 {{price}}
-🏡 {{beds}} Beds | 🛁 {{baths}} Baths | 📏 {{sqft}} Sq Ft"""
-
-    # Add agent attribution as a separate line if both agent and company are provided
+    # Create agent attribution if provided
+    agent_attribution = ""
     if listing_agents and agent_company:
-        header_template += f"\nListed by: {{listing_agents}} ({{agent_company}})"
+        agent_attribution = f"Listed by: {listing_agents} ({agent_company})"
 
     prompt = f"""
     You are a social media expert creating Instagram captions for luxury real estate listings. Your goal is to create content that will make people want to follow a luxury real estate Instagram page.
@@ -57,15 +53,10 @@ Follow us for more amazing luxury homes in Bethesda that'll make your jaw drop."
       4. Call-to-action paragraph (exactly 1 sentence)
 
     THE HEADER MUST BE FORMATTED EXACTLY LIKE THIS:
-    {header_template.format(
-        address=address,
-        price=price,
-        beds=beds,
-        baths=baths,
-        sqft=sqft,
-        listing_agents=listing_agents if listing_agents else "",
-        agent_company=agent_company if agent_company else ""
-    )}
+    📍 {address}
+    💰 {price}
+    🏡 {beds} Beds | 🛁 {baths} Baths | 📏 {sqft} Sq Ft
+    {"Listed by: " + listing_agents + " (" + agent_company + ")" if listing_agents and agent_company else ""}
 
     TONE EXAMPLES:
     ✓ "This place isn't just a house, it's basically a private resort."
@@ -115,7 +106,7 @@ Follow us for more amazing luxury homes in Bethesda that'll make your jaw drop."
             caption = response.choices[0].message.content.strip()
 
             # Simple validation to ensure proper formatting
-            if validate_caption_format(caption, address, price, listing_agents is not None):
+            if validate_caption_format(caption, address, price):
                 # Check word count
                 content_only = extract_content_without_header(caption)
                 word_count = len(content_only.split())
@@ -210,10 +201,10 @@ def extract_content_without_header(caption):
         content_start_idx += 1
 
     # Join the content lines
-    return '\n'.join(lines[content_start_idx:]).strip()
+    return '\n'.join(lines[content_start_idx:])
 
 
-def validate_caption_format(caption, address, price, has_agents=False):
+def validate_caption_format(caption, address, price):
     """Validate that the caption follows the required format."""
     try:
         lines = caption.split('\n')
@@ -236,35 +227,21 @@ def validate_caption_format(caption, address, price, has_agents=False):
 
         # The fourth line might be agent attribution or the start of content
         content_start_idx = 3
-        if has_agents and len(lines) > 3 and lines[3].startswith("Listed by:"):
+        if len(lines) > 3 and lines[3].startswith("Listed by:"):
             content_start_idx = 4
-        elif has_agents and len(lines) > 3 and not lines[3].startswith("Listed by:"):
-            # We were expecting agent info but it's not there
-            return False
 
         # Make sure we have content after the header
         if len(lines) <= content_start_idx:
             return False
 
-        # Ensure there's a blank line between header and content
-        if lines[content_start_idx].strip() != "":
-            # Need an empty line to separate header from content
-            return False
-
-        content_start_idx += 1  # Skip the blank line
-
         # Count paragraphs (empty lines separate paragraphs)
-        content_lines = lines[content_start_idx:]
-        content_text = '\n'.join(content_lines)
-        content_paragraphs = [p for p in content_text.split('\n\n') if p.strip()]
-
+        content_paragraphs = [p for p in '\n'.join(lines[content_start_idx:]).split('\n\n') if p.strip()]
         if len(content_paragraphs) != 3:  # Should have exactly 3 paragraphs after header
             return False
 
         return True
 
     except Exception as e:
-        print(f"Validation error: {e}")
         return False  # If validation process errors out, fail safely
 
 
@@ -277,10 +254,7 @@ if __name__ == "__main__":
     sample_baths = "5"
     sample_sqft = "5,000"
     sample_address = "123 Main St, Bethesda, MD 20817"
-    sample_agent = "John Smith"
-    sample_company = "Luxury Real Estate"
 
-    # Test with agent info
     caption = generate_instagram_post(
         sample_description,
         sample_price,
@@ -288,26 +262,11 @@ if __name__ == "__main__":
         sample_baths,
         sample_sqft,
         sample_address,
-        sample_agent,
-        sample_company
+        "John Smith",
+        "Luxury Real Estate"
     )
 
-    print("\nGENERATED CAPTION WITH AGENT INFO:")
+    print("\nGENERATED CAPTION:")
     print("=" * 50)
     print(caption)
-    print("=" * 50)
-
-    # Test without agent info
-    caption_no_agent = generate_instagram_post(
-        sample_description,
-        sample_price,
-        sample_beds,
-        sample_baths,
-        sample_sqft,
-        sample_address
-    )
-
-    print("\nGENERATED CAPTION WITHOUT AGENT INFO:")
-    print("=" * 50)
-    print(caption_no_agent)
     print("=" * 50)

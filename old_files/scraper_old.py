@@ -214,113 +214,6 @@ def extract_county_from_url(listing_url, address):
         return county_name
 
 
-def scrape_specific_listing(address):
-    """
-    Scrape a specific listing by address.
-    Returns a dictionary with the listing information, including image URLs.
-
-    Args:
-        address (str): The property address to scrape
-
-    Returns:
-        dict: Listing data including image_urls list
-    """
-    print(f"Scraping specific listing: {address}")
-
-    # Convert address to a searchable format
-    search_address = address.replace(',', '').replace(' ', '+')
-
-    # Create a search URL
-    search_url = f"https://www.compass.com/search/listings/?q={search_address}"
-
-    # Set up the driver
-    driver = start_driver()
-
-    try:
-        # Search for the listing
-        driver.get(search_url)
-        time.sleep(random.uniform(3, 5))
-
-        # Wait for page to load
-        wait_for_page_load(driver)
-
-        # Look for the first search result
-        try:
-            # First try to find card link
-            listing_links = driver.find_elements(By.CSS_SELECTOR, "a.card-link")
-
-            # If that doesn't work, try alternative selectors
-            if not listing_links:
-                listing_links = driver.find_elements(By.CSS_SELECTOR, "a[href*='/listing/']")
-
-            if not listing_links:
-                print(f"No listings found for address: {address}")
-                return None
-
-            # Click on the first result
-            listing_url = listing_links[0].get_attribute("href")
-            print(f"Found listing URL: {listing_url}")
-            driver.get(listing_url)
-            time.sleep(random.uniform(3, 5))
-
-            # Wait for page to load
-            wait_for_page_load(driver)
-
-            # Extract image URLs
-            image_urls = []
-
-            # Get hero image
-            try:
-                hero_image = driver.find_element(By.ID, "media-gallery-hero-image")
-                if hero_image:
-                    src = hero_image.get_attribute("src")
-                    if src:
-                        image_urls.append(src)
-            except NoSuchElementException:
-                print("Hero image not found")
-
-            # Get carousel images
-            try:
-                carousel_images = driver.find_elements(By.CSS_SELECTOR, "img[data-flickity-lazyload-src]")
-                for img in carousel_images:
-                    img_url = img.get_attribute("data-flickity-lazyload-src")
-                    if img_url and img_url not in image_urls:
-                        image_urls.append(img_url)
-            except NoSuchElementException:
-                print("Carousel images not found")
-
-            # As a backup, get any large images on the page
-            if not image_urls:
-                all_images = driver.find_elements(By.TAG_NAME, "img")
-                for img in all_images:
-                    width = img.get_attribute("width")
-                    height = img.get_attribute("height")
-                    src = img.get_attribute("src")
-                    # Only get reasonably sized images
-                    if src and (width and int(width) > 400) and (height and int(height) > 400):
-                        if src not in image_urls:
-                            image_urls.append(src)
-
-            print(f"Found {len(image_urls)} images for {address}")
-
-            # Return minimal information needed for image processing
-            return {
-                "address": address,
-                "image_urls": image_urls
-            }
-
-        except Exception as e:
-            print(f"Error finding or processing listing page: {e}")
-            return None
-
-    except Exception as e:
-        print(f"Error scraping listing for {address}: {e}")
-        return None
-
-    finally:
-        driver.quit()
-
-
 def scrape_listings():
     """Scrapes the first page of real estate listings from Compass and uploads images if enabled."""
     driver = start_driver()
@@ -456,8 +349,7 @@ def scrape_listings():
                 "instagram_caption": instagram_caption,
                 "listing_agents": listing_agents,
                 "agent_company": agent_company,
-                "county": county_name.replace(" County", ""),  # Store county name without "County" suffix
-                "image_urls": image_urls  # Include the image URLs in the returned data
+                "county": county_name.replace(" County", "")  # Store county name without "County" suffix
             })
 
     except Exception as e:
